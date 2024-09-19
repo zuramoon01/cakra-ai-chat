@@ -35,10 +35,12 @@
   }
 </script>
 
-<div class="flex min-h-dvh w-full items-center justify-center">
+<div
+  class="flex min-h-dvh w-full items-center justify-center bg-havelock-blue-950"
+>
   <main
     class={clsx(
-      "flex w-[25rem] flex-col items-start rounded-md border border-black bg-white px-6 py-8",
+      "flex w-[25rem] flex-col items-start rounded-md bg-white px-6 py-8",
       errorMessage ? "gap-4" : "gap-10",
     )}
   >
@@ -76,7 +78,7 @@
         </div>
 
         <button
-          class="flex h-10 w-full items-center justify-center rounded-sm bg-black text-base/[100%] font-bold text-white"
+          class="flex h-10 w-full items-center justify-center rounded-sm bg-havelock-blue-800 px-4 text-base/[100%] font-bold text-white"
           >Masuk</button
         >
       </form>
@@ -85,7 +87,7 @@
         <span class="text-base/[100%]"
           >Belum punya akun ? <a
             href="/auth/signup"
-            class="font-bold underline">Daftar</a
+            class="font-bold text-havelock-blue-800 underline">Daftar</a
           ></span
         >
       </div>

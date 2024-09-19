@@ -1,6 +1,6 @@
-import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import * as schema from './schema';
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
+import * as schema from "./schema";
 
 const { PGUSER, PGPASSWORD, PGHOST, PGDATABASE } = Bun.env as {
   PGUSER: string;
@@ -14,7 +14,7 @@ const postgresClient = postgres({
   password: PGPASSWORD,
   host: PGHOST,
   database: PGDATABASE,
-  ssl: 'require',
+  ssl: "require",
 });
 
 export const db = drizzle(postgresClient, { schema });

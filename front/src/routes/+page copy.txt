@@ -1,0 +1,337 @@
+<script lang="ts">
+  import { goto } from "$app/navigation";
+  import { user } from "$lib/stores";
+  import type { Room, User } from "$lib/types";
+  import { api, revokeCookieAccessToken } from "$lib/utils";
+  import clsx from "clsx";
+  import { onMount } from "svelte";
+  import Plus from "lucide-svelte/icons/plus";
+  import X from "lucide-svelte/icons/x";
+
+  let search = "";
+  let searchResults: User[] | null = null;
+
+  let selectedRoom: Room | null = null;
+  let rooms: Room[] = [];
+
+  let modalGroupChat = false;
+  let errorMessage: string | null = null;
+
+  let groupName = "";
+  let listGroupUser = [
+    {
+      id: "0a361767-76ff-419d-aded-e08718aef7cd",
+      username: "Zura",
+    },
+    {
+      id: "0a361767-26ff-419d-aded-e08718aef7cd",
+      username: "Zuraa",
+    },
+  ];
+  let listGroupResults: User[] | null = null;
+
+  async function searchUser() {
+    try {
+      const { data } = await api.get(`/user?search=${search}`);
+
+      searchResults = data.data;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async function getRooms() {
+    try {
+      const { data } = await api.get("/room");
+      console.log(data.data);
+
+      rooms = data.data;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async function setSelectedRoom(userId: string) {
+    try {
+      const { data } = await api.post("/room", {
+        userId,
+      });
+
+      await getRooms();
+
+      selectedRoom = data.data;
+      searchResults = null;
+      search = "";
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  let timer: Timer;
+  async function searchGroupUser() {
+    clearTimeout(timer);
+
+    timer = setTimeout(async () => {
+      try {
+        const { data } = await api.get(`/user?search=${search}`);
+
+        listGroupResults = data.data;
+      } catch (error) {
+        console.log(error);
+      }
+    }, 300);
+  }
+
+  function signOut() {
+    revokeCookieAccessToken();
+    user.set(null);
+
+    goto("/auth/signin");
+  }
+
+  onMount(async () => {
+    await getRooms();
+  });
+</script>
+
+<div
+  class="grid min-h-dvh w-full grid-cols-[minmax(20rem,_25rem),_minmax(20rem,_1fr)] text-havelock-blue-50"
+>
+  <div
+    class="flex w-full flex-col items-start gap-4 bg-havelock-blue-900 px-4 py-6"
+  >
+    <div class="flex w-full items-center justify-between gap-1">
+      <h1 class="text-2xl/[100%] font-bold">Chat App</h1>
+
+      <button
+        type="button"
+        on:click={signOut}
+        class="flex h-10 items-center justify-center rounded-sm bg-havelock-blue-800 px-4 text-base/[100%] font-bold"
+        >Keluar</button
+      >
+    </div>
+
+    <form
+      on:submit|preventDefault={searchUser}
+      class="flex w-full items-start"
+    >
+      <input
+        type="text"
+        id="search"
+        name="search"
+        bind:value={search}
+        placeholder={"Cari pengguna"}
+        class="h-10 w-full rounded-l-sm px-4 text-base/[100%] text-black"
+      />
+
+      <button
+        class="flex h-10 items-center justify-center rounded-r-sm bg-havelock-blue-800 px-4 text-base/[100%] font-bold"
+        >Cari</button
+      >
+    </form>
+
+    <button
+      type="button"
+      on:click={() => {
+        modalGroupChat = true;
+      }}
+      class="flex h-10 w-full items-center justify-center rounded-r-sm bg-havelock-blue-800 px-4"
+      ><div class="flex w-full items-center justify-center gap-2">
+        <Plus
+          size={20}
+          strokeWidth={3}
+        />
+        <span class="text-base/[100%] font-bold">Buat Grup Chat</span>
+      </div></button
+    >
+
+    <div
+      class="flex w-full flex-col items-start divide-y-[1px] divide-white/10"
+    >
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      {#if searchResults}
+        {#each searchResults as user (user.id)}
+          <div
+            on:click={() => {
+              setSelectedRoom(user.id);
+            }}
+            class={clsx(
+              "flex w-full cursor-pointer flex-col items-start gap-1 p-2",
+              "hover:bg-white/10",
+            )}
+          >
+            <h2 class="text-base/[100%] font-semibold">{user.username}</h2>
+            <span class="text-sm/[100%]">Recent chat</span>
+          </div>
+        {/each}
+      {:else}
+        {#each rooms as room (room.id)}
+          <div
+            on:click={() => {
+              selectedRoom = room;
+            }}
+            class={clsx(
+              "flex w-full items-center justify-between p-2",
+              selectedRoom?.id === room.id
+                ? "bg-white/10"
+                : ["cursor-pointer", "hover:bg-white/10"],
+            )}
+          >
+            <div class="flex flex-col items-start gap-1">
+              <h2 class="text-base/[100%] font-semibold">
+                {room.isGroup ? room.name : room.members[0].username}
+              </h2>
+              <span class="text-sm/[100%]">Recent chat</span>
+            </div>
+
+            <div class="flex flex-col items-start gap-1">
+              <span class="text-xs/[100%]">00:00</span>
+            </div>
+          </div>
+        {/each}
+      {/if}
+    </div>
+  </div>
+
+  <div class="flex w-full min-w-80 flex-col items-start bg-havelock-blue-950">
+    {#if selectedRoom}
+      <div class="flex h-full w-full flex-col items-start">
+        <div class="w-full flex-col items-start gap-1 bg-white/5 px-4 py-2">
+          <h2 class="text-base/[100%] font-semibold">
+            {selectedRoom.isGroup
+              ? selectedRoom.name
+              : selectedRoom.members[0].username}
+          </h2>
+          <span class="text-sm/[100%]">Recent chat</span>
+        </div>
+
+        <div class="flex h-full w-full flex-col items-start"></div>
+      </div>
+
+      <form
+        on:submit|preventDefault={searchUser}
+        class="flex w-full items-start gap-4 bg-white/10 p-4"
+      >
+        <input
+          type="text"
+          id="search"
+          name="search"
+          bind:value={search}
+          placeholder={"Cari pengguna"}
+          class="h-10 w-full rounded-lg px-4 text-base/[100%] text-black"
+        />
+
+        <button
+          class="flex h-10 items-center justify-center rounded-lg bg-havelock-blue-800 px-4 text-base/[100%] font-bold"
+          >Kirim</button
+        >
+      </form>
+    {/if}
+  </div>
+
+  {#if !modalGroupChat}
+    <div
+      class="absolute inset-0 flex h-full w-full items-center justify-center bg-black/40"
+    >
+      <div
+        class={clsx(
+          "flex w-[25rem] flex-col items-start rounded-md bg-havelock-blue-950 px-6 py-8",
+          errorMessage ? "gap-4" : "gap-10",
+        )}
+      >
+        <div class="w-full">
+          <h1 class="text-3xl/[100%] font-semibold">Buat Grup Chat</h1>
+        </div>
+
+        <div class="flex w-full flex-col items-start gap-6">
+          {#if errorMessage}
+            <span class="text-base/[100%] text-red-500">{errorMessage}</span>
+          {/if}
+
+          <form
+            on:submit|preventDefault={() => {}}
+            class="flex w-full flex-col items-start gap-8"
+          >
+            <div class="flex w-full flex-col items-start gap-2">
+              <input
+                type="text"
+                id="groupName"
+                name="groupName"
+                bind:value={groupName}
+                placeholder="Masukkan nama grup"
+                class="h-10 w-full rounded-sm border border-black px-4 text-base/[100%] text-black"
+              />
+
+              <input
+                type="text"
+                on:keydown={async () => {
+                  searchGroupUser();
+                }}
+                placeholder="Tambah pengguna"
+                class="h-10 w-full rounded-sm border border-black px-4 text-base/[100%] text-black"
+              />
+
+              {#if listGroupUser.length > 0}
+                <div class="flex w-full items-start gap-1">
+                  {#each listGroupUser as user (user.id)}
+                    <div
+                      class="flex items-center justify-center gap-1 rounded bg-havelock-blue-800 px-4 py-2"
+                    >
+                      <span class="text-sm/[100%]">{user.username}</span>
+
+                      <!-- svelte-ignore a11y-no-static-element-interactions -->
+                      <!-- svelte-ignore a11y-click-events-have-key-events -->
+                      <div
+                        on:click={() => {
+                          listGroupUser = listGroupUser.filter(
+                            (item) => item.id !== user.id,
+                          );
+                        }}
+                      >
+                        <X
+                          size={16}
+                          class={clsx(
+                            "cursor-pointer",
+                            "hover:text-havelock-blue-950/80",
+                          )}
+                        />
+                      </div>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+
+              {#if listGroupResults}
+                <div class="flex w-full flex-col items-start gap-1">
+                  {#each listGroupResults as user (user.id)}
+                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                    <!-- svelte-ignore a11y-no-static-element-interactions -->
+                    <div
+                      on:click={() => {
+                        setSelectedRoom(user.id);
+                      }}
+                      class={clsx(
+                        "flex w-full cursor-pointer flex-col items-start gap-1 bg-white/10 p-2",
+                        "hover:bg-white/20",
+                      )}
+                    >
+                      <h2 class="text-base/[100%] font-semibold">
+                        {user.username}
+                      </h2>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+
+            <button
+              class="flex h-10 w-full items-center justify-center rounded-sm bg-havelock-blue-800 px-4 text-base/[100%] font-bold text-white"
+              >Buat</button
+            >
+          </form>
+        </div>
+      </div>
+    </div>
+  {/if}
+</div>

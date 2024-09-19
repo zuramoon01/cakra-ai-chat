@@ -1,9 +1,9 @@
-import { HttpStatusCode } from '../types/http-status-code';
+import { HttpStatusCode } from "../types";
 
 export class DuplicateUserError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'DuplicateUserError';
+    this.name = "DuplicateUserError";
   }
 }
 
@@ -14,7 +14,7 @@ export class InvalidDataError extends Error {
   // eslint-disable-next-line
   constructor(message: string, errors?: any) {
     super(message);
-    this.name = 'InvalidDataError';
+    this.name = "InvalidDataError";
     this.errors = errors;
 
     Object.setPrototypeOf(this, InvalidDataError.prototype);
@@ -28,8 +28,8 @@ export function errorHandler(error: unknown) {
     errors?: any;
     errorType: string;
   } = {
-    message: 'Error tidak diketahui. Mohon laporkan kepada Developer.',
-    errorType: 'UncatchError',
+    message: "Error tidak diketahui. Mohon laporkan kepada Developer.",
+    errorType: "UncatchError",
   };
 
   const responseStatus: (typeof HttpStatusCode)[keyof typeof HttpStatusCode] =

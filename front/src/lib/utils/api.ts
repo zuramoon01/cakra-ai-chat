@@ -8,9 +8,9 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = Cookies.get("token");
+  const accessToken = Cookies.get("access_token");
 
-  config.headers.Authorization = `Bearer ${token}`;
+  config.headers.Authorization = `Bearer ${accessToken}`;
 
   return config;
 });

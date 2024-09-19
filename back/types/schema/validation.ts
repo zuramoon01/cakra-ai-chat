@@ -1,9 +1,10 @@
 export const ValidationMessage = {
   Type: (
     name: string,
-    type: "string",
-    // | "nan"
-    // | "number"
+    type:
+      | "string"
+      // | "nan"
+      | "number",
     // | "integer"
     // | "float"
     // | "boolean"
@@ -23,6 +24,8 @@ export const ValidationMessage = {
     // | "set",
   ) => {
     switch (typeof type) {
+      case "number":
+        return `${name} harus dalam bentuk number.`;
       default:
         return `${name} harus dalam bentuk string.`;
     }
